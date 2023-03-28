@@ -4,6 +4,8 @@
   "description": "A light-weight user's step-by-step guide for your website using Vanilla JS.",
   "main": "src/index.js",
   "scripts": {
+    "start": "npx webpack serve --config webpack.config.js",
+    "wp-build" : "webpack",
     "minify-css": "npx cleancss -o dist/webtour.min.css src/webtour.css",
     "minify-js": "npx babel dist/webtour.js --out-file dist/webtour.min.js --presets minify",
     "build": "rollup -c && npm run minify-js && npm run minify-css"
@@ -24,15 +26,22 @@
     "url": "https://github.com/votch18/WebTour/issues"
   },
   "homepage": "https://github.com/votch18/WebTour#readme",
-  "dependencies": {},
   "devDependencies": {
     "@babel/cli": "^7.12.8",
     "@babel/core": "^7.12.9",
     "@babel/preset-env": "^7.12.7",
     "@rollup/plugin-babel": "^5.2.2",
     "@rollup/plugin-node-resolve": "^11.0.0",
+    "babel-loader": "^9.1.2",
     "babel-preset-minify": "^0.5.1",
     "clean-css-cli": "^4.3.0",
-    "rollup": "^2.34.2"
+    "css-loader": "^6.7.3",
+    "html-webpack-plugin": "^5.5.0",
+    "mini-css-extract-plugin": "^2.7.5",
+    "rollup": "^2.34.2",
+    "style-loader": "^3.3.2",
+    "webpack": "^5.76.3",
+    "webpack-cli": "^5.0.1",
+    "webpack-dev-server": "^4.13.1"
   }
 }

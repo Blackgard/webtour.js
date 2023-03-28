@@ -1,5 +1,7 @@
+import "./webtour.css"
+
 export default class WebTour {    
-    constructor(options = {}) {
+    constructor(options = {}, labels = {}) {
         if (!!this.constructor.instance) {
             return this.constructor.instance;
         }
@@ -18,9 +20,18 @@ export default class WebTour {
             width: '300px',
             zIndex: 10050,
             removeArrow: false,
+            autoScroll: true,
             onNext: () => null,
             onPrevious: () => null,
             ...options,
+        }
+
+        this.labels = {
+            next: 'Next &#8594;',
+            prev: '&#8592; Back',
+            done: 'Done',
+            close: 'Close',
+            ...labels
         }
 
         this.steps = [];
@@ -249,6 +260,17 @@ export default class WebTour {
         const popoverInner = this.document.createElement('div');
         popoverInner.classList.add('wt-popover-inner');
        
+        //progress bar
+        const progressBar = this.document.createElement('div');
+        progressBar.classList.add('wt-progress-bar');
+
+        const progressBarInner = this.document.createElement('div');
+        progressBarInner.classList.add('wt-progress-bar-inner');
+        progressBarInner.style.width = Math.round((this.stepIndex + 1) / this.steps.length * 100) + '%';
+
+        progressBar.append(progressBarInner);
+        popoverInner.append(progressBar);
+
         //title
         const title = this.document.createElement('div');
         title.classList.add('wt-title');
@@ -263,26 +285,61 @@ export default class WebTour {
         
         //buttons
         const showBtns = (step.showBtns == null || step.showBtns == 'undefined') ? true : Boolean(step.showBtns);
-
-        if (showBtns){
+        if (showBtns)
+        {
             const btnNext = this.document.createElement('button');
             const btnBack = this.document.createElement('button');
 
             btnNext.classList.add('wt-btns', 'wt-btn-next');
             btnBack.classList.add('wt-btns', 'wt-btn-back');
 
-            btnNext.innerHTML = (step.btnNext && step.btnNext.text ? step.btnNext.text : (this.stepIndex == this.steps.length - 1 ? 'Done' : 'Next &#8594;'));
-            btnBack.innerHTML = (step.btnBack && step.btnBack.text ? step.btnBack.text : (this.stepIndex == 0 ? 'Close' : '	&#8592; Back'));
+            btnNext.innerHTML = (step.btnNext && step.btnNext.text ? step.btnNext.text : (this.stepIndex == this.steps.length - 1 ? this.labels.done : this.labels.next));
+            btnBack.innerHTML = (step.btnBack && step.btnBack.text ? step.btnBack.text : (this.stepIndex == 0 ? this.labels.close : this.labels.prev));
 
             //add styles
-            btnNext.style.backgroundColor = (step.btnNext && step.btnNext.backgroundColor ? step.btnNext.backgroundColor : '#7cd1f9');
-            btnNext.style.color = (step.btnNext && step.btnNext.textColor ? step.btnNext.textColor : '#fff');
+            btnNext.style.backgroundColor = (step.btnNext && step.btnNext.backgroundColor ? step.btnNext.backgroundColor : '');
+            btnNext.style.color = (step.btnNext && step.btnNext.textColor ? step.btnNext.textColor : '');
 
             btnBack.style.backgroundColor = (step.btnBack && step.btnBack.backgroundColor ? step.btnBack.backgroundColor : '#efefef;');
             btnBack.style.color = (step.btnBack && step.btnBack.textColor ? step.btnBack.textColor : '#555');
+
             popoverInner.append(btnNext);
             popoverInner.append(btnBack);
         }
+
+        // Navigation
+        const navigation = this.document.createElement('div');
+        navigation.classList.add('wt-navigation');
+
+        const navigationAllSteps = this.document.createElement('div');
+        navigationAllSteps.classList.add('wt-navigation-all-steps');
+        navigationAllSteps.innerText = this.steps.length;
+
+        const navigationSeparator = this.document.createElement('div');
+        navigationSeparator.classList.add('wt-navigation-separator');
+        navigationSeparator.innerText = '/';
+
+        const navigationActualStep = this.document.createElement('div');
+        navigationActualStep.classList.add('wt-navigation-actual-step');
+        navigationActualStep.innerText = this.stepIndex + 1;
+
+        navigation.append(navigationActualStep);
+        navigation.append(navigationSeparator);
+        navigation.append(navigationAllSteps);
+        popoverInner.append(navigation);
+
+        // close btn
+        const closeBtn = this.document.createElement('a');
+        closeBtn.href = "javascript:void(0);";
+        closeBtn.classList.add('wt-close-btn');
+        closeBtn.onclick = () => this.stop();
+        popoverInner.append(closeBtn);
+
+        //popover pulse
+        const pulse = this.document.createElement('div');
+        pulse.classList.add('wt-pulse');
+        pulse.setAttribute('data-popper-pulse', 'true');
+        popover.append(pulse);
 
         //popover arrow
         const arrow = this.document.createElement('div');
@@ -308,9 +365,13 @@ export default class WebTour {
         */
         else {                
             popover.classList.add('wt-slides');
-            popover.scrollIntoView({behavior: "smooth", block: "center", inline: "center"});
+            if (this.options.autoScroll) 
+            {
+                popover.scrollIntoView({behavior: "smooth", block: "center", inline: "center"});
+            }
 
-            if (this.options.highlight){
+            if (this.options.highlight)
+            {
                 var overlay = document.createElement('div');
                 overlay.classList.add('wt-overlay', 'open');
                 overlay.style.zIndex = this.options.zIndex - 10;
@@ -323,13 +384,20 @@ export default class WebTour {
             }                
 
             arrow.remove();
+            pulse.remove();
         }
 
         //add option to remove arrow because popper arrows are not positioning well
         //TODO: fix popper arrow
-        if (this.options.removeArrow){
+        if (this.options.removeArrow)
+        {
             arrow.remove();
         }
+
+    }
+
+    initProgressBar()
+    {
 
     }
 
@@ -542,11 +610,13 @@ export default class WebTour {
             popover.style.left = (el_left - (popover.offsetWidth + this.options.offset)) + 'px';
         }
 
-        //if position is fixed scroll to top
-        if (strategy === 'fixed'){
-            this.window.scrollTo(0, 0);
-        }else{
-            popover.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
+        if (this.options.autoScroll) {
+            //if position is fixed scroll to top
+            if (strategy === 'fixed'){
+                this.window.scrollTo(0, 0);
+            }else{
+                popover.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
+            }
         }            
     }
 
@@ -612,3 +682,5 @@ export default class WebTour {
     }
 
 }
+
+window.WebTour = WebTour;
